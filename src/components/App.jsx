@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const tempMovieData = [
     {
@@ -44,10 +44,39 @@ const tempWatchedData = [
 
 const average = (arr) =>
     arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
-
+const KEY = "5d651a66";
+const query = "l:s;fl";
 export default function App() {
-    const [movies, setMovies] = useState(tempMovieData);
+    const [movies, setMovies] = useState([]);
     const [watched, setWatched] = useState(tempWatchedData);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+    useEffect(function () {
+        async function fetchMovies() {
+            setIsLoading(true);
+            try {
+                const res = await fetch(
+                    `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+                );
+                if (!res.ok)
+                    throw new Error(
+                        "Something went wrong ! failed to fetch Movies"
+                    );
+                const data = await res.json();
+                console.log(data)
+                if (data.Response === "False")
+                    throw new Error("Movie not found");
+                else {
+                    setMovies(data.Search);
+                }
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchMovies();
+    }, []);
     return (
         <>
             <NavBar>
@@ -56,7 +85,10 @@ export default function App() {
             </NavBar>
             <Main>
                 <Box>
-                    <ListMovies movies={movies} />
+                    {/*isLoading ? <Loader /> : <ListMovies movies={movies} />*/}
+                    {isLoading && <Loader />}
+                    {!isLoading && !error && <ListMovies movies={movies} />}
+                    {error && <ErrorMessage message={error} />}
                 </Box>
 
                 <Box>
@@ -66,6 +98,12 @@ export default function App() {
             </Main>
         </>
     );
+}
+function ErrorMessage({ message }) {
+    return <p className="error">{message}</p>;
+}
+function Loader() {
+    return <p className="loader">Loading...</p>;
 }
 function Box({ children }) {
     const [isOpen, setIsOpen] = useState(true);
