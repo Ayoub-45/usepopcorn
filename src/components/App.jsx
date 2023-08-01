@@ -45,14 +45,16 @@ const tempWatchedData = [
 const average = (arr) =>
     arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 const KEY = "5d651a66";
-const query = "l:s;fl";
 export default function App() {
+    const [query, setQuery] = useState("");
     const [movies, setMovies] = useState([]);
     const [watched, setWatched] = useState(tempWatchedData);
+    const [selectedMovieId,setSelectedMovieId]=useState("tt4244162");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     useEffect(function () {
         async function fetchMovies() {
+            setError("");
             setIsLoading(true);
             try {
                 const res = await fetch(
@@ -75,12 +77,17 @@ export default function App() {
                 setIsLoading(false);
             }
         }
+        if(query.length<3){
+            setMovies([])
+            setError("");
+            return
+        }
         fetchMovies();
-    }, []);
+    }, [query]);
     return (
         <>
             <NavBar>
-                <SearchForMovie />
+                <SearchForMovie query={query} setQuery={setQuery}/>
                 <NumResults movies={movies} />
             </NavBar>
             <Main>
@@ -92,8 +99,17 @@ export default function App() {
                 </Box>
 
                 <Box>
-                    <SummaryWatchedMovies watched={watched} />
-                    <ListWatchedMovies watched={watched} />
+                    {
+                    selectedMovieId ? (
+                        <MovieDetails selectedMovieId={selectedMovieId}/>)
+                        :(
+
+                            <>
+                        <SummaryWatchedMovies watched={watched} />
+                        <ListWatchedMovies watched={watched} />
+                        </>
+                            )
+                    }
                 </Box>
             </Main>
         </>
@@ -131,6 +147,9 @@ function ListMovies({ movies }) {
             ))}
         </ul>
     );
+}
+function MovieDetails({selectedMovieId}){
+    return (<div>{selectedMovieId}</div>)
 }
 function Movie({ movie }) {
     return (
@@ -206,8 +225,8 @@ function MovieWatched({ movie }) {
         </li>
     );
 }
-function SearchForMovie() {
-    const [query, setQuery] = useState("");
+function SearchForMovie({query,setQuery}) {
+   
     return (
         <input
             className="search"
