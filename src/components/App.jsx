@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StarRating } from "./StarRating";
 const average = (arr) =>
     arr.reduce((acc, cur, i, arr) => (acc + cur) / arr.length, 0);
@@ -10,9 +10,9 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     //const [watched, setWatched] = useState([]);
-    const [watched, setWatched] = useState(function(){
-        const storedValue=localStorage.getItem("watched")
-        return JSON.parse(storedValue)
+    const [watched, setWatched] = useState(function () {
+        const storedValue = localStorage.getItem("watched");
+        return JSON.parse(storedValue);
     });
 
     function handleSelectMovie(id) {
@@ -164,6 +164,14 @@ function MovieDetails({
     const [isLoading, setIsLoading] = useState(false);
     const [movie, setMovie] = useState({});
     const [userRating, setUserRating] = useState("");
+    const countRef = useRef(0);
+    useEffect(
+        function () {
+           if(userRating) countRef.current = countRef.current + 1;
+            
+        },
+        [userRating]
+    );
     const {
         Title: title,
         Year: year,
@@ -185,6 +193,7 @@ function MovieDetails({
             imdbRating: Number(imdbRating),
             runtime: Number(runtime.split(" ").at(0)),
             userRating,
+            countRatingDecisions:countRef.current
         };
         onAddWatched(newWatchedMovie);
         onCloseMovie();
@@ -380,6 +389,23 @@ function MovieWatched({ movie, onDeleteWatched }) {
     );
 }
 function SearchForMovie({ query, setQuery }) {
+    const inputEl = useRef(null);
+    useEffect(
+        function () {
+            function callback(e) {
+                if (e.code === "Enter") {
+                    if (document.activeElement === inputEl.current) return;
+                    inputEl.current.focus();
+                    setQuery("");
+                }
+            }
+            document.addEventListener("keydown", callback);
+            return function () {
+                document.addEventListener("keydown", callback);
+            };
+        },
+        [setQuery]
+    );
     return (
         <input
             className="search"
@@ -387,6 +413,7 @@ function SearchForMovie({ query, setQuery }) {
             placeholder="Search movies..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            ref={inputEl}
         />
     );
 }
